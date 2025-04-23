@@ -1,53 +1,237 @@
-{% extends "news/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Home - Django News Portal{% endblock %}
+{% block title %}Home - News Portal{% endblock %}
 
 {% block content %}
-    <h2>Latest News</h2>
-    
-    {% for article in latest_articles %}
-        <div class="article-card">
-            <h3><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h3>
-            
-            <div class="article-meta">
-                <span>By <a href="{{ article.reporter.get_absolute_url }}">{{ article.reporter }}</a></span>
-                <span>in <a href="{{ article.category.get_absolute_url }}">{{ article.category }}</a></span>
-                <span>on {{ article.published_date|date:"F j, Y" }}</span>
-            </div>
-            
-            {% if article.image %}
-                <img src="{{ article.image.url }}" alt="{{ article.title }}">
-            {% endif %}
-            
-            <p>{{ article.summary }}</p>
-            
-            <div class="article-tags">
-                {% for tag in article.tags.all %}
-                    <a href="{{ tag.get_absolute_url }}" style="margin-right: 5px;">#{{ tag.name }}</a>
+<div class="row">
+    <!-- Featured Articles Section -->
+    <div class="col-12 mb-4" data-aos="fade-down">
+        <div class="featured-articles">
+            <h2 class="section-title mb-4">
+                <i class="fas fa-star text-warning"></i> Featured News
+            </h2>
+            <div class="row">
+                {% for article in latest_articles|slice:":3" %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm hover-card" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
+                        {% if article.image %}
+                        <div class="card-img-wrapper">
+                            <img src="{{ article.image.url }}" class="card-img-top" alt="{{ article.title }}" style="height: 200px; object-fit: cover;">
+                            <div class="card-img-overlay d-flex align-items-end">
+                                <span class="badge bg-primary">{{ article.category }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ article.title }}</h5>
+                            <p class="card-text text-muted">{{ article.summary|truncatewords:20 }}</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="far fa-clock"></i> {{ article.published_date|timesince }} ago
+                                </small>
+                                <a href="{{ article.get_absolute_url }}" class="btn btn-sm btn-outline-primary">Read More</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
             </div>
-            
-            <a href="{{ article.get_absolute_url }}">Read more</a>
         </div>
-    {% empty %}
-        <p>No articles available.</p>
-    {% endfor %}
-    
-    {% if is_paginated %}
-        <div class="pagination">
-            {% if page_obj.has_previous %}
-                <a href="?page=1">&laquo; first</a>
-                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
-            {% endif %}
-            
-            <span>
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-            </span>
-            
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">next</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-            {% endif %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <h3 class="section-title mb-4" data-aos="fade-right">
+            <i class="fas fa-newspaper"></i> Latest News
+        </h3>
+        
+        {% for article in latest_articles %}
+        <div class="card mb-4 shadow-sm hover-card" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
+            <div class="row g-0">
+                {% if article.image %}
+                <div class="col-md-4">
+                    <img src="{{ article.image.url }}" class="img-fluid rounded-start h-100" alt="{{ article.title }}" style="object-fit: cover;">
+                </div>
+                {% endif %}
+                <div class="col-md-{% if article.image %}8{% else %}12{% endif %}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h4 class="card-title">{{ article.title }}</h4>
+                            <span class="badge bg-{{ article.category.name|slugify }} mb-2">
+                                {{ article.category }}
+                            </span>
+                        </div>
+                        <p class="card-text">{{ article.summary|truncatewords:30 }}</p>
+                        <div class="article-meta">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="author-info">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> {{ article.reporter }}
+                                    </small>
+                                </div>
+                                <div class="article-stats">
+                                    <span class="me-2">
+                                        <i class="far fa-comment"></i> 
+                                        {{ article.comments.count }}
+                                    </span>
+                                    <span class="me-2">
+                                        <i class="far fa-clock"></i> 
+                                        {{ article.published_date|date:"M d, Y" }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{{ article.get_absolute_url }}" class="btn btn-primary btn-sm">Read More</a>
+                            {% for tag in article.tags.all %}
+                            <a href="{{ tag.get_absolute_url }}" class="badge bg-secondary text-decoration-none ms-1">
+                                #{{ tag.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    {% endif %}
+        {% empty %}
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle"></i> No articles available at the moment.
+        </div>
+        {% endfor %}
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4" data-aos="fade-up">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Categories -->
+        <div class="card shadow-sm mb-4" data-aos="fade-left">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-folder"></i> Categories
+            </div>
+            <div class="card-body">
+                {% for category in categories %}
+                <a href="{{ category.get_absolute_url }}" class="btn btn-outline-primary btn-sm mb-2 me-2">
+                    {{ category.name }}
+                    <span class="badge bg-primary">{{ category.articles.count }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Articles -->
+        <div class="card shadow-sm mb-4" data-aos="fade-left" data-aos-delay="100">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-clock"></i> Recent Articles
+            </div>
+            <div class="card-body">
+                {% for article in recent_articles %}
+                <div class="recent-article mb-3">
+                    <a href="{{ article.get_absolute_url }}" class="text-decoration-none">
+                        <div class="d-flex align-items-center">
+                            {% if article.image %}
+                            <img src="{{ article.image.url }}" class="rounded me-2" alt="{{ article.title }}" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-0">{{ article.title|truncatechars:40 }}</h6>
+                                <small class="text-muted">
+                                    {{ article.published_date|timesince }} ago
+                                </small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.card-img-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-img-wrapper img {
+    transition: transform 0.3s ease;
+}
+
+.card-img-wrapper:hover img {
+    transform: scale(1.05);
+}
+
+.section-title {
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50px;
+    height: 3px;
+    background: #007bff;
+}
+
+.recent-article {
+    transition: all 0.3s ease;
+}
+
+.recent-article:hover {
+    transform: translateX(5px);
+}
+</style>
 {% endblock %}

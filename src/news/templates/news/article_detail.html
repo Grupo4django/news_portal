@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} - News Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8" data-aos="fade-up">
+        <article class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="card-title animate__animated animate__fadeIn">{{ article.title }}</h1>
+                
+                <div class="article-meta text-muted mb-4 animate__animated animate__fadeIn animate__delay-1s">
+                    <span><i class="fas fa-user"></i> {{ article.reporter }}</span>
+                    <span class="mx-2">|</span>
+                    <span><i class="fas fa-folder"></i> {{ article.category }}</span>
+                    <span class="mx-2">|</span>
+                    <span><i class="far fa-clock"></i> {{ article.published_date|date:"F j, Y" }}</span>
+                </div>
+
+                {% if article.image %}
+                <div class="article-image mb-4 animate__animated animate__fadeIn animate__delay-1s">
+                    <img src="{{ article.image.url }}" alt="{{ article.title }}" class="img-fluid rounded">
+                </div>
+                {% endif %}
+
+                <div class="article-content animate__animated animate__fadeIn animate__delay-2s">
+                    {{ article.content|linebreaks }}
+                </div>
+
+                <div class="article-tags mt-4">
+                    {% for tag in article.tags.all %}
+                    <a href="{{ tag.get_absolute_url }}" class="badge bg-secondary text-decoration-none me-1 animate__animated animate__fadeIn animate__delay-2s">
+                        #{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </article>
+
+        <!-- Comments Section -->
+        <div class="comments-section mt-5" data-aos="fade-up">
+            <h3 class="mb-4"><i class="fas fa-comments"></i> Comments</h3>
+            
+            {% if user.is_authenticated %}
+            <div class="card shadow-sm mb-4 animate__animated animate__fadeIn">
+                <div class="card-body">
+                    <form method="post" action="{% url 'comments:add_comment' article.id %}">
+                        {% csrf_token %}
+                        {{ comment_form.as_p }}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Submit Comment
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="comments-list">
+                {% for comment in article.comments.all %}
+                    {% if comment.is_approved or user.is_staff %}
+                    <div class="comment card shadow-sm mb-3 animate__animated animate__fadeIn" data-aos-delay="{{ forloop.counter|add:"2" }}00">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="card-subtitle">
+                                    <i class="fas fa-user-circle"></i> {{ comment.author.username }}
+                                </h6>
+                                <small class="text-muted">
+                                    <i class="far fa-clock"></i> {{ comment.created_date|timesince }} ago
+                                </small>
+                            </div>
+                            <p class="card-text mt-3">{{ comment.body|linebreaks }}</p>
+                            <div class="comment-actions d-flex align-items-center">
+                                <button class="btn btn-sm btn-outline-primary vote-btn me-2" data-comment="{{ comment.id }}" data-vote="up">
+                                    <i class="fas fa-thumbs-up"></i> {{ comment.upvotes }}
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger vote-btn me-2" data-comment="{{ comment.id }}" data-vote="down">
+                                    <i class="fas fa-thumbs-down"></i> {{ comment.downvotes }}
+                                </button>
+                                {% if user.is_authenticated %}
+                                <button class="btn btn-sm btn-link reply-toggle" data-comment="{{ comment.id }}">
+                                    <i class="fas fa-reply"></i> Reply
+                                </button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Reply form -->
+                            <div class="reply-form mt-3 d-none" id="reply-form-{{ comment.id }}">
+                                <form method="post" action="{% url 'comments:reply_comment' comment.id %}">
+                                    {% csrf_token %}
+                                    {{ comment_form.as_p }}
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-reply"></i> Submit Reply
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Nested replies -->
+                            {% for reply in comment.get_replies %}
+                                {% if reply.is_approved or user.is_staff %}
+                                <div class="reply card mt-3 ms-4">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="card-subtitle">
+                                                <i class="fas fa-user-circle"></i> {{ reply.author.username }}
+                                            </h6>
+                                            <small class="text-muted">
+                                                <i class="far fa-clock"></i> {{ reply.created_date|timesince }} ago
+                                            </small>
+                                        </div>
+                                        <p class="card-text mt-2">{{ reply.body|linebreaks }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% empty %}
+                    <p class="text-muted text-center">No comments yet. Be the first to comment!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4" data-aos="fade-left">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-newspaper"></i> Related Articles
+            </div>
+            <div class="card-body">
+                {% for related in related_articles %}
+                <div class="mb-3 animate__animated animate__fadeIn" data-aos-delay="{{ forloop.counter }}00">
+                    <a href="{{ related.get_absolute_url }}" class="text-decoration-none">
+                        {{ related.title }}
+                    </a>
+                </div>
+                {% empty %}
+                <p class="text-muted">No related articles found.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Recent Articles</div>
+            <div class="card-body">
+                {% for article in recent_articles %}
+                <div class="mb-2">
+                    <a href="{{ article.get_absolute_url }}">{{ article.title }}</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.reply-toggle').forEach(button => {
+    button.addEventListener('click', function() {
+        const commentId = this.dataset.comment;
+        const replyForm = document.querySelector(`#reply-form-${commentId}`);
+        replyForm.classList.toggle('d-none');
+    });
+});
+
+document.querySelectorAll('.vote-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const commentId = this.dataset.comment;
+        const voteType = this.dataset.vote;
+        fetch(`/comments/vote/${commentId}/${voteType}/`)
+            .then(response => response.json())
+            .then(data => {
+                const comment = this.closest('.comment');
+                comment.querySelector(`[data-vote="up"]`).textContent = `👍 ${data.upvotes}`;
+                comment.querySelector(`[data-vote="down"]`).textContent = `👎 ${data.downvotes}`;
+            });
+    });
+});
+</script>
+{% endblock %}

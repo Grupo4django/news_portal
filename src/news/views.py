@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
 from .models import Article, Category, Reporter, Tag
+from comments.forms import CommentForm
 
 
 class ArticleListView(ListView):
@@ -35,7 +36,7 @@ class ArticleDetailView(DetailView):
         return Article.objects.filter(status="published")
     
     def get_context_data(self, **kwargs):
-        """Add related articles to context"""
+        """Add related articles and comment form to context"""
         context = super().get_context_data(**kwargs)
         article = self.get_object()
         
@@ -50,6 +51,9 @@ class ArticleDetailView(DetailView):
         context["recent_articles"] = Article.objects.filter(
             status="published"
         ).order_by("-published_date")[:5]
+        
+        # Add comment form
+        context['comment_form'] = CommentForm()
         
         return context
 
@@ -127,3 +131,12 @@ class TagDetailView(ListView):
         ).order_by("-published_date")[:5]
         
         return context
+
+
+def article_detail(request, pk):
+    article = get_object_or_404(Article, pk=pk)
+    comment_form = CommentForm()
+    return render(request, 'news/article_detail.html', {
+        'article': article,
+        'comment_form': comment_form,
+    })
