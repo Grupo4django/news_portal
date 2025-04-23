@@ -1,0 +1,59 @@
+{% extends "news/base.html" %}
+
+{% block title %}{{ reporter }} - Django News Portal{% endblock %}
+
+{% block content %}
+    <div class="reporter-profile">
+        <h2>{{ reporter }}</h2>
+        
+        {% if reporter.avatar %}
+            <img src="{{ reporter.avatar.url }}" alt="{{ reporter }}" 
+                 style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%;">
+        {% endif %}
+        
+        {% if reporter.bio %}
+            <div class="reporter-bio">
+                <h3>About the reporter</h3>
+                {{ reporter.bio|linebreaks }}
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="reporter-articles">
+        <h3>Articles by {{ reporter }}</h3>
+        
+        {% for article in articles %}
+            <div class="article-card">
+                <h4><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h4>
+                
+                <div class="article-meta">
+                    <span>in <a href="{{ article.category.get_absolute_url }}">{{ article.category }}</a></span>
+                    <span>on {{ article.published_date|date:"F j, Y" }}</span>
+                </div>
+                
+                <p>{{ article.summary }}</p>
+                <a href="{{ article.get_absolute_url }}">Read more</a>
+            </div>
+        {% empty %}
+            <p>This reporter hasn't published any articles yet.</p>
+        {% endfor %}
+    </div>
+    
+    {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+            
+            <span>
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

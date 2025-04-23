@@ -1,0 +1,46 @@
+{% extends "news/base.html" %}
+
+{% block title %}#{{ tag.name }} - Django News Portal{% endblock %}
+
+{% block content %}
+    <h2>#{{ tag.name }}</h2>
+    
+    {% for article in articles %}
+        <div class="article-card">
+            <h3><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h3>
+            
+            <div class="article-meta">
+                <span>By <a href="{{ article.reporter.get_absolute_url }}">{{ article.reporter }}</a></span>
+                <span>in <a href="{{ article.category.get_absolute_url }}">{{ article.category }}</a></span>
+                <span>on {{ article.published_date|date:"F j, Y" }}</span>
+            </div>
+            
+            {% if article.image %}
+                <img src="{{ article.image.url }}" alt="{{ article.title }}">
+            {% endif %}
+            
+            <p>{{ article.summary }}</p>
+            <a href="{{ article.get_absolute_url }}">Read more</a>
+        </div>
+    {% empty %}
+        <p>No articles with this tag yet.</p>
+    {% endfor %}
+    
+    {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+            
+            <span>
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
